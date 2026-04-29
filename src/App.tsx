@@ -46,29 +46,19 @@ function Navigation() {
             <Link to="/results" className="hover:text-yellow-400 transition-colors font-semibold text-orange-400">Result Portal</Link>
             
             {token ? (
-              <div className="flex items-center space-x-4">
-                <Link to="/dashboard" className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-md font-medium transition-colors">
-                  Dashboard
-                </Link>
-                <Link to="/admin" title="Admin Portal" className="text-white hover:text-yellow-400 transition-colors">
-                  <Lock size={20} />
-                </Link>
-              </div>
+              <Link to="/dashboard" className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-md font-medium transition-colors">
+                Dashboard
+              </Link>
             ) : (
-              <div className="flex items-center space-x-4">
-                <div className="relative group">
-                  <button className="flex items-center gap-1 hover:text-yellow-400 transition-colors font-medium">
-                    <UserCircle size={20} /> Login Portals
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-gray-100">
-                    <Link to="/login" state={{ role: 'teacher' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">Staff Login</Link>
-                    <Link to="/login" state={{ role: 'student' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">Student Login</Link>
-                    <Link to="/login" state={{ role: 'parent' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">Parent Login</Link>
-                  </div>
+              <div className="relative group">
+                <button className="flex items-center gap-1 hover:text-yellow-400 transition-colors font-medium">
+                  <UserCircle size={20} /> Login Portals
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-gray-100">
+                  <Link to="/login" state={{ role: 'teacher' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">Staff Login</Link>
+                  <Link to="/login" state={{ role: 'student' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">Student Login</Link>
+                  <Link to="/login" state={{ role: 'parent' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">Parent Login</Link>
                 </div>
-                <Link to="/admin" title="Admin Portal" className="text-white hover:text-yellow-400 transition-colors">
-                  <Lock size={20} />
-                </Link>
               </div>
             )}
           </div>
@@ -92,21 +82,13 @@ function Navigation() {
             <Link to="/contact" onClick={() => setIsOpen(false)} className="hover:text-yellow-400">Contact</Link>
             <Link to="/results" onClick={() => setIsOpen(false)} className="text-orange-400 font-semibold">Result Portal</Link>
             {token ? (
-              <>
-                <Link to="/dashboard" onClick={() => setIsOpen(false)} className="text-yellow-400">Dashboard</Link>
-                <Link to="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-2 hover:text-yellow-400">
-                  <Lock size={18} /> Admin Portal
-                </Link>
-              </>
+              <Link to="/dashboard" onClick={() => setIsOpen(false)} className="text-yellow-400">Dashboard</Link>
             ) : (
               <>
                 <div className="text-gray-400 text-sm mt-4 mb-2 uppercase tracking-wider font-bold">Login Portals</div>
                 <Link to="/login" state={{ role: 'teacher' }} onClick={() => setIsOpen(false)} className="block text-gray-300 hover:text-white pl-2">Staff Login</Link>
                 <Link to="/login" state={{ role: 'student' }} onClick={() => setIsOpen(false)} className="block text-gray-300 hover:text-white pl-2">Student Login</Link>
                 <Link to="/login" state={{ role: 'parent' }} onClick={() => setIsOpen(false)} className="block text-gray-300 hover:text-white pl-2">Parent Login</Link>
-                <Link to="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-gray-300 hover:text-white pl-2 mt-4 pt-4 border-t border-blue-700">
-                  <Lock size={18} /> Admin Portal
-                </Link>
               </>
             )}
           </div>
