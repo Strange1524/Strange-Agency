@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 dotenv.config({ override: true });
 import express from 'express';
+import 'express-async-errors';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
@@ -138,13 +139,18 @@ async function startServer() {
   });
 
   app.post('/api/auth/login', async (req, res) => {
-    const { username, password } = req.body;
-    const user = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
-    if (user && await bcrypt.compare(password, user.password)) {
-      const token = jsonwebtoken.sign({ id: user.id, username: user.username, role: user.role, name: user.name, assignedClass: user.assignedClass }, JWT_SECRET);
-      res.json({ token, user: { id: user.id, username: user.username, role: user.role, name: user.name, assignedClass: user.assignedClass } });
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
+    try {
+      const { username, password } = req.body;
+      const user = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
+      if (user && await bcrypt.compare(password, user.password)) {
+        const token = jsonwebtoken.sign({ id: user.id, username: user.username, role: user.role, name: user.name, assignedClass: user.assignedClass }, JWT_SECRET);
+        res.json({ token, user: { id: user.id, username: user.username, role: user.role, name: user.name, assignedClass: user.assignedClass } });
+      } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+      }
+    } catch (err: any) {
+      console.error("Login error: ", err);
+      res.status(500).json({ error: 'Internal server error during login: ' + err.message });
     }
   });
 
@@ -726,6 +732,14 @@ async function startServer() {
     } catch (e: any) {
       if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Global Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Unhandled API Error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
   });
 

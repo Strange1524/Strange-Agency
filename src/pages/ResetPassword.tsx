@@ -32,8 +32,9 @@ export default function ResetPassword() {
         const data = await res.json();
         setError(data.error || 'Failed to reset password');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred. Please try again.');
     }
   };
 

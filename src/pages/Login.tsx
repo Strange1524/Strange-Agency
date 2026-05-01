@@ -41,8 +41,9 @@ export default function Login({ forceRole }: { forceRole?: string }) {
       } else {
         setError(data.error || 'Login failed');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred. Please try again.');
     }
   };
 
@@ -66,8 +67,9 @@ export default function Login({ forceRole }: { forceRole?: string }) {
       } else {
         setError(data.error || 'Failed to request reset');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred. Please try again.');
     }
   };
 
