@@ -11,6 +11,7 @@ const isLocalhost = connectionString.includes('localhost') || connectionString.i
 const client = postgres(connectionString, {
   connect_timeout: 10,
   max: 10,
+  prepare: false,
   ssl: isLocalhost ? false : 'require',
 });
 export const db = drizzle(client, { schema });
