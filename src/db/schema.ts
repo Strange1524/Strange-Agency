@@ -1,4 +1,4 @@
-import { pgTable, text, integer, real, serial, bigint, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, real, serial, bigint, index, timestamp } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -26,6 +26,7 @@ export const subjects = pgTable('subjects', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   code: text('code').notNull().unique(),
+  noteUrl: text('note_url'),
 });
 
 export const results = pgTable('results', {
@@ -65,6 +66,22 @@ export const gallery = pgTable('gallery', {
   type: text('type').notNull(), // 'image' or 'video'
   title: text('title'),
   description: text('description'),
+});
+
+export const assignments = pgTable('assignments', {
+  id: serial('id').primaryKey(),
+  teacherId: integer('teacher_id').references(() => users.id, { onDelete: 'cascade' }),
+  assignedClass: text('assigned_class').notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  attachmentUrl: text('attachment_url'),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+export const siteVisits = pgTable('site_visits', {
+  id: serial('id').primaryKey(),
+  date: text('date').notNull().unique(), // YYYY-MM-DD
+  count: integer('count').default(1).notNull()
 });
 
 export const siteSettings = pgTable('site_settings', {

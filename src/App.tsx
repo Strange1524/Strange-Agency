@@ -159,12 +159,23 @@ function FloatingWhatsApp() {
   );
 }
 
+function SiteVisitTracker() {
+  useEffect(() => {
+    if (!sessionStorage.getItem('visit_logged')) {
+      fetch('/api/visits', { method: 'POST' }).catch(() => {});
+      sessionStorage.setItem('visit_logged', 'true');
+    }
+  }, []);
+  return null;
+}
+
 import { SettingsProvider } from './contexts/SettingsContext';
 
 export default function App() {
   return (
     <SettingsProvider>
       <Router>
+        <SiteVisitTracker />
         <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
           <Navigation />
           <main className="flex-grow">

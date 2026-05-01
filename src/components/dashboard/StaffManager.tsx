@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Key } from 'lucide-react';
 
 export default function StaffManager() {
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -27,6 +27,34 @@ export default function StaffManager() {
     })
     .then(res => res.json())
     .then(data => setClasses(data));
+  };
+
+  const handlePasswordReset = async (userId: number) => {
+    const newPassword = prompt('Enter new password for this staff member (min 6 characters):');
+    if (!newPassword || newPassword.length < 6) {
+      alert('Password reset cancelled or invalid. Minimum 6 characters required.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users/${userId}/force-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ password: newPassword })
+      });
+      if (res.ok) {
+        alert('Password reset successfully!');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to reset password');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to reset password');
+    }
   };
 
   useEffect(() => {
@@ -162,6 +190,9 @@ export default function StaffManager() {
                   </select>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button onClick={() => handlePasswordReset(teacher.id)} title="Reset Password" className="text-orange-600 hover:text-orange-900 mr-3">
+                    <Key size={20} />
+                  </button>
                   {editingId === teacher.id ? (
                     <button onClick={() => handleEdit(teacher.id)} className="text-green-600 hover:text-green-900 mr-3">Save</button>
                   ) : (

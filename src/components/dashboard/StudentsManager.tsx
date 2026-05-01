@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Key } from 'lucide-react';
 
 export default function StudentsManager() {
   const [students, setStudents] = useState<any[]>([]);
@@ -90,6 +90,38 @@ export default function StudentsManager() {
     fetchStudents();
   };
 
+  const handlePasswordReset = async (userId: number | null) => {
+    if (!userId) {
+      alert('Missing user account for this student.');
+      return;
+    }
+    const newPassword = prompt('Enter new password for this student (min 6 characters):');
+    if (!newPassword || newPassword.length < 6) {
+      alert('Password reset cancelled or invalid. Minimum 6 characters required.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users/${userId}/force-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ password: newPassword })
+      });
+      if (res.ok) {
+        alert('Password reset successfully!');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to reset password');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to reset password');
+    }
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Manage Students</h2>
@@ -177,6 +209,9 @@ export default function StudentsManager() {
                   ) : student.department || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button onClick={() => handlePasswordReset(student.userId as number | null)} title="Reset Password" className="text-orange-600 hover:text-orange-900 mr-3">
+                    <Key size={20} />
+                  </button>
                   {editingId === student.id ? (
                     <button onClick={() => handleEdit(student.id)} className="text-green-600 hover:text-green-900 mr-3">Save</button>
                   ) : (

@@ -7,8 +7,8 @@ import fs from 'fs';
 import bcrypt from 'bcryptjs';
 import jsonwebtoken from 'jsonwebtoken';
 import { db } from './src/db/index';
-import { users, students, subjects, results, gallery, passwordResetRequests, classes, siteSettings } from './src/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { users, students, subjects, results, gallery, passwordResetRequests, classes, siteSettings, siteVisits, assignments } from './src/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import multer from 'multer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-city-academy';
@@ -299,6 +299,84 @@ async function startServer() {
     }
   });
 
+  // Force Password Reset Route (Admin Only)
+  app.post('/api/users/:id/force-password-reset', authenticate, requireRole(['admin']), async (req, res) => {
+    const { password } = req.body;
+    try {
+      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters');
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await db.update(users).set({ password: hashedPassword }).where(eq(users.id, parseInt(req.params.id)));
+      res.json({ success: true, message: 'Password reset successfully' });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Assignments
+  app.get('/api/assignments', authenticate, async (req: any, res) => {
+    try {
+      const userReq = req.user;
+      const userRecord = (await db.select().from(users).where(eq(users.id, userReq.id)).limit(1))[0];
+      
+      let items;
+      if (userRecord.role === 'admin') {
+        items = await db.select().from(assignments).orderBy(sql`${assignments.createdAt} DESC`);
+      } else if (userRecord.role === 'teacher') {
+        items = await db.select().from(assignments).where(eq(assignments.teacherId, userReq.id)).orderBy(sql`${assignments.createdAt} DESC`);
+      } else if (userRecord.role === 'student') {
+        const studentRec = (await db.select().from(students).where(eq(students.userId, userReq.id)).limit(1))[0];
+        if (studentRec) {
+          items = await db.select().from(assignments).where(eq(assignments.assignedClass, studentRec.class)).orderBy(sql`${assignments.createdAt} DESC`);
+        } else {
+          items = [];
+        }
+      }
+      res.json(items || []);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.post('/api/assignments', authenticate, requireRole(['teacher', 'admin']), upload.single('attachment'), async (req: any, res) => {
+    try {
+      const { title, description, assignedClass, teacherId } = req.body;
+      const attachmentUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      
+      const teacher = req.user.role === 'teacher' ? req.user.id : parseInt(teacherId);
+
+      await db.insert(assignments).values({
+        title,
+        description,
+        assignedClass,
+        teacherId: teacher,
+        attachmentUrl
+      });
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Dashboard / Visit Stats
+  app.post('/api/visits', async (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      await db.execute(sql`INSERT INTO site_visits (date, count) VALUES (${today}, 1) ON CONFLICT (date) DO UPDATE SET count = site_visits.count + 1`);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.get('/api/visits', authenticate, requireRole(['admin']), async (req, res) => {
+    try {
+      const visits = await db.select().from(siteVisits).orderBy(siteVisits.date);
+      res.json(visits);
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
   // Students Routes
   app.get('/api/students', authenticate, requireRole(['admin', 'teacher']), async (req, res) => {
     const allStudents = await db.select().from(students);
@@ -372,10 +450,11 @@ async function startServer() {
     res.json(allSubjects);
   });
 
-  app.post('/api/subjects', authenticate, requireRole(['admin', 'teacher']), async (req, res) => {
+  app.post('/api/subjects', authenticate, requireRole(['admin', 'teacher']), upload.single('noteFile'), async (req, res) => {
     const { name, code } = req.body;
+    const noteUrl = req.file ? `/uploads/${req.file.filename}` : null;
     try {
-      await db.insert(subjects).values({ name, code });
+      await db.insert(subjects).values({ name, code, noteUrl });
       res.json({ success: true });
     } catch (e: any) {
       res.status(400).json({ error: e.message });

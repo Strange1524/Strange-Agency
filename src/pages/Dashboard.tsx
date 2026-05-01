@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Users, BookOpen, FileText, Image, LogOut, LayoutDashboard, UserPlus, UploadCloud, KeyRound, Settings, FileSpreadsheet } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import StudentsManager from '../components/dashboard/StudentsManager';
 import SubjectsManager from '../components/dashboard/SubjectsManager';
 import ResultsManager from '../components/dashboard/ResultsManager';
@@ -13,6 +14,56 @@ import StudentOverview from '../components/dashboard/StudentOverview';
 import PasswordResets from '../components/dashboard/PasswordResets';
 import SiteSettingsManager from '../components/dashboard/SiteSettingsManager';
 import Broadsheet from '../components/dashboard/Broadsheet';
+import AssignmentsPlatform from '../components/dashboard/AssignmentsPlatform';
+import { Bell } from 'lucide-react';
+
+function AdminOverview({ user }: { user: any }) {
+  const [visits, setVisits] = useState<any[]>([]);
+  
+  useEffect(() => {
+    fetch('/api/visits', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then(res => res.json())
+    .then(data => setVisits(data))
+    .catch(() => {});
+  }, []);
+
+  const totalVisits = visits.reduce((acc, curr) => acc + curr.count, 0);
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">System Overview</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+          <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Your Role</h3>
+          <p className="text-2xl font-bold text-gray-800 capitalize">{user.role}</p>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500">
+          <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Total Site Visits</h3>
+          <p className="text-2xl font-bold text-gray-800">{totalVisits}</p>
+        </div>
+      </div>
+      
+      {visits.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Site Visitors Chat (Last 30 Days)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={visits.slice(-30)}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" fontSize={12} tickFormatter={(val) => val.slice(5)} />
+                <YAxis fontSize={12} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" name="Visits" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -49,6 +100,7 @@ export default function Dashboard() {
     { path: '/dashboard/classes', label: 'Manage Classes', icon: <BookOpen size={20} />, show: isAdmin },
     { path: '/dashboard/students', label: 'Manage Students', icon: <Users size={20} />, show: isTeacher },
     { path: '/dashboard/subjects', label: 'Manage Subjects', icon: <BookOpen size={20} />, show: isTeacher },
+    { path: '/dashboard/assignments', label: 'Assignments', icon: <Bell size={20} />, show: true },
     { path: '/dashboard/results', label: 'Manage Results', icon: <FileText size={20} />, show: isTeacher },
     { path: '/dashboard/broadsheet', label: 'Broadsheet', icon: <FileSpreadsheet size={20} />, show: isTeacher },
     { path: '/dashboard/gallery', label: 'Manage Gallery', icon: <Image size={20} />, show: isAdmin },
@@ -104,22 +156,14 @@ export default function Dashboard() {
             ) : user.role === 'student' ? (
               <StudentOverview user={user} />
             ) : (
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-6">System Overview</h1>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Your Role</h3>
-                    <p className="text-2xl font-bold text-gray-800 capitalize">{user.role}</p>
-                  </div>
-                  {/* More stats could go here */}
-                </div>
-              </div>
+              <AdminOverview user={user} />
             )
           } />
           <Route path="/students" element={<StudentsManager />} />
           <Route path="/staff" element={<StaffManager />} />
           <Route path="/classes" element={<ClassesManager />} />
           <Route path="/subjects" element={<SubjectsManager />} />
+          <Route path="/assignments" element={<AssignmentsPlatform user={user} />} />
           <Route path="/results" element={<ResultsManager />} />
           <Route path="/broadsheet" element={<Broadsheet />} />
           <Route path="/gallery" element={<GalleryManager />} />

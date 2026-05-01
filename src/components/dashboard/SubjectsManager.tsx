@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Trash2, Plus, Paperclip } from 'lucide-react';
 
 export default function SubjectsManager() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [noteFile, setNoteFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSubjects = () => {
     fetch('/api/subjects', {
@@ -23,16 +26,22 @@ export default function SubjectsManager() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('code', code);
+    if (noteFile) formData.append('noteFile', noteFile);
+
     await fetch('/api/subjects', {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
-      body: JSON.stringify({ name, code })
+      body: formData
     });
     setName('');
     setCode('');
+    setNoteFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     fetchSubjects();
   };
 
@@ -69,7 +78,7 @@ export default function SubjectsManager() {
       
       <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
         <h3 className="text-lg font-semibold mb-4">Add New Subject</h3>
-        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
             <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 border rounded-md" />
@@ -77,6 +86,10 @@ export default function SubjectsManager() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
             <input type="text" required value={code} onChange={e => setCode(e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Note (Optional)</label>
+            <input type="file" ref={fileInputRef} onChange={e => setNoteFile(e.target.files?.[0] || null)} className="w-full text-sm" />
           </div>
           <button type="submit" className="bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-blue-800 flex items-center justify-center gap-2">
             <Plus size={20} /> Add
@@ -90,6 +103,7 @@ export default function SubjectsManager() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note Outline</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -105,6 +119,13 @@ export default function SubjectsManager() {
                   {editingId === subject.id ? (
                     <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="border px-2 py-1 rounded" />
                   ) : subject.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {subject.noteUrl ? (
+                    <a href={subject.noteUrl} target="_blank" className="text-blue-600 hover:underline flex items-center gap-1">
+                      <Paperclip size={14} /> Download
+                    </a>
+                  ) : '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {editingId === subject.id ? (
